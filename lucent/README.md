@@ -4,7 +4,15 @@ A fast, private music player for the music files on your PC, built with React an
 
 - `frontend/`: the app (React, TypeScript, Tailwind). Shared by the web prototype and the Windows app.
 - `desktop/`: the Windows app shell (Tauri 2 + Rust). See [desktop/README.md](desktop/README.md).
-- `.github/workflows/windows-installer.yml`: builds the Windows installer on GitHub.
+- `.github/workflows/build-windows.yml`: builds the Windows installer on GitHub.
+
+## Lucent V3
+
+Use the mini-player button in the playback bar for a compact, always-on-top Windows window; restore with the expand button. Playback continues in the same window. In the browser preview the compact layout does not create a separate window.
+
+Playlist covers can be selected on the playlist page. Images are cropped and stored locally; removing a playlist does not delete music files. Saved playlists and playback queues are separate: after editing a playlist, play it again to refresh the queue. The queue shows played, current, and upcoming songs.
+
+Settings → Appearance offers Performance and Full effects (24 or 72 particles), with particle, rain, snow and aurora styles. Full is more graphics-intensive; actual performance depends on the machine. Effects pause with playback and respect reduced motion. Settings → Equalizer provides five bands, presets, and automatic headroom for boosts.
 
 ## Lucent V2
 

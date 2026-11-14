@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowDown, ArrowUp, ListMusic, Plus, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatLongDuration, formatTime, plural } from '../core/format'
 import type { Track } from '../core/types'
@@ -8,6 +8,7 @@ import { useLibrary } from '../state/LibraryContext'
 import { usePlaylists } from '../state/PlaylistContext'
 import { usePlayer, usePlayerState } from '../state/PlayerContext'
 import { Artwork } from '../components/lucent/Artwork'
+import { PlaylistCover } from '../components/lucent/PlaylistCover'
 import { CollectionHeader, PageShell } from '../components/lucent/CollectionHeader'
 import { ConfirmDialog } from '../components/lucent/ConfirmDialog'
 import { cn } from '../lib/shadcn/utils'
@@ -94,9 +95,7 @@ export function PlaylistsPage() {
           {playlists.map((p) => (
             <div key={p.id} className="lc-playlist-card lc-glass flex flex-col rounded-2xl p-4">
               <Link to={`/playlists/${p.id}`} className="lc-focus flex min-w-0 items-center gap-3 rounded-lg text-left">
-                <span className="lc-playlist-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
-                  <ListMusic className="h-6 w-6" />
-                </span>
+                <PlaylistCover id={p.id} revision={p.coverRevision} className="h-12 w-12 rounded-xl" />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-foreground">{p.name}</span>
                   <span className="text-xs text-muted-foreground">
@@ -127,7 +126,7 @@ export function PlaylistsPage() {
 
 export function PlaylistDetailPage() {
   const { playlistId = '' } = useParams()
-  const { playlists, rename, remove, addTrack, removeTrack, moveTrack } = usePlaylists()
+  const { playlists, rename, remove, addTrack, removeTrack, moveTrack, setCover } = usePlaylists()
   const { byId, tracks: libraryTracks } = useLibrary()
   const engine = usePlayer()
   const player = usePlayerState()
@@ -173,7 +172,7 @@ export function PlaylistDetailPage() {
         kind="Playlist"
         title={playlist.name}
         meta={`${plural(tracks.length, 'song')} · ${formatLongDuration(duration)}`}
-        icon={<ListMusic className="lc-accent-text h-16 w-16" />}
+        icon={<PlaylistCover id={playlist.id} revision={playlist.coverRevision} className="h-full w-full rounded-[18px]" />}
         trackIds={ids}
         contextLabel={label}
         actions={
@@ -186,6 +185,14 @@ export function PlaylistDetailPage() {
             >
               {adding ? 'Done adding' : 'Add songs'}
             </button>
+            <label className="lc-focus cursor-pointer rounded-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground">
+              Change cover
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Choose playlist cover" className="sr-only" onChange={(e) => {
+                const file = e.target.files?.[0]; e.target.value = ''
+                if (file) void setCover(playlistId, file).then(() => toast.success('Playlist cover saved')).catch((err) => toast.error(err instanceof Error ? err.message : 'Could not save cover'))
+              }} />
+            </label>
+            {playlist.coverRevision > 0 && <button type="button" onClick={() => void setCover(playlistId, null).catch(() => toast.error('Could not remove cover'))} className="lc-focus rounded-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground">Remove cover</button>}
             <button
               type="button"
               onClick={() => {
@@ -282,6 +289,7 @@ export function PlaylistDetailPage() {
           )}
         </section>
       )}
+      {tracks.length > 0 && <p className="mb-3 text-xs text-muted-foreground">Saved playlist order. Playback uses a separate queue; play the playlist again to refresh it after editing.</p>}
       {tracks.length ? (
         <div className="flex flex-col gap-1" aria-label="Playlist songs">
           {tracks.map((t, i) => (

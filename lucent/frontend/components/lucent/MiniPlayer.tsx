@@ -1,4 +1,4 @@
-import { Maximize2 } from 'lucide-react'
+import { Maximize2, Minimize2 } from 'lucide-react'
 import { useCurrentTrack, usePlayerState } from '../../state/PlayerContext'
 import { useUi } from '../../state/UiContext'
 import { Artwork } from './Artwork'
@@ -8,7 +8,7 @@ import { VolumeControl } from './VolumeControl'
 import { IconButton } from './IconButton'
 
 /** Floating glass playback bar. */
-export function MiniPlayer() {
+export function MiniPlayer({ onIsland }: { onIsland: () => void }) {
   const track = useCurrentTrack()
   const { contextLabel } = usePlayerState()
   const { setNowPlayingOpen, queueOpen, setQueueOpen } = useUi()
@@ -52,6 +52,9 @@ export function MiniPlayer() {
 
       <div className="flex items-center justify-end gap-1">
         <VolumeControl className="hidden md:flex" />
+        <IconButton label="Mini-player mode" size="sm" onClick={onIsland}>
+          <Minimize2 />
+        </IconButton>
         <IconButton label="Now Playing" shortcut="N" size="sm" disabled={!track} onClick={() => setNowPlayingOpen(true)}>
           <Maximize2 />
         </IconButton>

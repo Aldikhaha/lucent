@@ -173,3 +173,44 @@ test('restoring a missing current track selects a valid song without old positio
   assert.equal(p.getTime(), 0)
   assert.equal(p.getState().status, 'paused')
 })
+
+test('jumping between songs retains the full queue without duplicates', async () => {
+  const p = engine()
+  p.playQueue(['a', 'b', 'c'])
+  p.jumpTo(2)
+  await tick()
+  assert.deepEqual(p.getState().queue, ['a', 'b', 'c'])
+  assert.equal(p.currentId, 'c')
+  p.jumpTo(0)
+  await tick()
+  assert.deepEqual(p.getState().queue, ['a', 'b', 'c'])
+  assert.equal(p.currentId, 'a')
+})
+
+test('stale asynchronous track loads release their sources and cannot replace the current song', async () => {
+  values.clear()
+  let finishA!: (value: { url: string; release: () => void }) => void
+  let released = 0
+  const p = new PlayerEngine({
+    loadSource: (id) => id === 'a' ? new Promise((resolve) => { finishA = resolve }) : Promise.resolve({ url: id }),
+    describe: () => null, artworkUrl: async () => null, onStarted() {}, onError() {},
+  })
+  p.playQueue(['a', 'b'])
+  p.next()
+  await tick()
+  finishA({ url: 'a', release: () => released++ })
+  await tick()
+  assert.equal(p.currentId, 'b')
+  assert.equal(p.audio.getAttribute('src'), 'b')
+  assert.equal(released, 1)
+})
+
+test('equalizer validates bands and persists settings', () => {
+  const p = engine()
+  p.setEqualizer(false, [20, -20, 1, 2, 3])
+  assert.deepEqual(p.getState().equalizer, { enabled: false, bands: [12, -12, 1, 2, 3] })
+  p.setEqualizer(false, [1, 2])
+  assert.deepEqual(p.getState().equalizer.bands, [12, -12, 1, 2, 3])
+  const saved = JSON.parse(values.get('lucent.equalizer.v1')!)
+  assert.deepEqual(saved.bands, [12, -12, 1, 2, 3])
+})

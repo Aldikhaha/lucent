@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 export type MotionPref = 'system' | 'full' | 'minimal'
+export type EffectQuality = 'performance' | 'full'
+export type EffectType = 'particles' | 'rain' | 'snow' | 'aurora'
 export type SongSort = 'title' | 'artist' | 'album' | 'added' | 'duration'
 
 export interface Prefs {
@@ -11,6 +13,8 @@ export interface Prefs {
   motion: MotionPref
   /** Decorative particles in the full-screen player. */
   nowPlayingEffects: boolean
+  effectQuality: EffectQuality
+  effectType: EffectType
   compact: boolean
   sidebarCollapsed: boolean
   songSort: SongSort
@@ -27,6 +31,8 @@ export const DEFAULT_PREFS: Prefs = {
   blur: 28,
   motion: 'system',
   nowPlayingEffects: true,
+  effectQuality: 'performance',
+  effectType: 'particles',
   compact: false,
   sidebarCollapsed: false,
   songSort: 'added',

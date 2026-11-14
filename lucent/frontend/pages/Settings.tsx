@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { FilePlus2, FolderPlus, HardDrive, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { useLibrary } from '../state/LibraryContext'
-import { useTrackActions } from '../state/PlayerContext'
-import { usePrefs, type MotionPref } from '../state/PrefsContext'
+import { usePlayer, usePlayerState, useTrackActions } from '../state/PlayerContext'
+import { EQ_FREQUENCIES } from '../core/player'
+import { usePrefs, type MotionPref, type EffectQuality, type EffectType } from '../state/PrefsContext'
 import { formatBytes, plural } from '../core/format'
 import { AUDIO_EXTENSIONS } from '../core/importer'
 import { isDesktop } from '../core/platform'
@@ -13,7 +14,7 @@ import { Slider } from '../lib/shadcn/slider'
 import { Switch } from '../lib/shadcn/switch'
 import { ToggleGroup, ToggleGroupItem } from '../lib/shadcn/toggle-group'
 
-export const APP_VERSION = '0.1.0 Beta'
+export const APP_VERSION = '3.0.0'
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -67,6 +68,8 @@ export default function Settings() {
   const { tracks, albums, pickFiles, pickFolder, missingIds, checkMissing } = useLibrary()
   const { clearLibrary, removeTracks } = useTrackActions()
   const { prefs, setPref, resetPrefs } = usePrefs()
+  const engine = usePlayer()
+  const { equalizer } = usePlayerState()
   const [confirmClear, setConfirmClear] = useState(false)
   const [confirmMissing, setConfirmMissing] = useState(false)
   const [checking, setChecking] = useState(false)
@@ -229,6 +232,16 @@ export default function Settings() {
             className="data-[state=checked]:bg-[color:var(--lc-accent)]"
           />
         </Row>
+        <Row label="Effects quality" hint="Full uses more graphics resources; Performance is lighter">
+          <select aria-label="Effects quality" value={prefs.effectQuality} onChange={(e) => setPref('effectQuality', e.target.value as EffectQuality)} className="lc-glass rounded-lg px-3 py-2 text-sm">
+            <option value="performance">Performance</option><option value="full">Full</option>
+          </select>
+        </Row>
+        <Row label="Effect style" hint="Shown in Now Playing while music is playing">
+          <select aria-label="Effect style" value={prefs.effectType} onChange={(e) => setPref('effectType', e.target.value as EffectType)} className="lc-glass rounded-lg px-3 py-2 text-sm">
+            <option value="particles">Particles</option><option value="rain">Rain</option><option value="snow">Snow</option><option value="aurora">Aurora</option>
+          </select>
+        </Row>
         <Row label="Compact mode" hint="Denser lists and a slimmer player">
           <Switch
             aria-label="Compact mode"
@@ -273,6 +286,21 @@ export default function Settings() {
           </Row>
         </Section>
       )}
+
+      <Section title="Equalizer" description="Five-band audio shaping. Boosts automatically add headroom to reduce clipping.">
+        <Row label="Equalizer" hint="Saved on this device">
+          <Switch aria-label="Enable equalizer" checked={equalizer.enabled} onCheckedChange={(v) => engine.setEqualizer(v, equalizer.bands)} className="data-[state=checked]:bg-[color:var(--lc-accent)]" />
+        </Row>
+        <div className="flex flex-wrap gap-2 py-3" aria-label="Equalizer presets">
+          {Object.entries({ Flat: [0,0,0,0,0], Bass: [6,3,0,0,0], Vocal: [-2,0,4,3,0], Treble: [0,0,0,3,6] }).map(([name, bands]) => <button type="button" className={pillBtn} key={name} onClick={() => engine.setEqualizer(true, bands)}>{name}</button>)}
+        </div>
+        <div className="grid grid-cols-1 gap-3 py-4 sm:grid-cols-5">
+          {EQ_FREQUENCIES.map((frequency, i) => <label key={frequency} className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground">
+            <span>{frequency >= 1000 ? `${frequency / 1000} kHz` : `${frequency} Hz`} · {equalizer.bands[i]} dB</span>
+            <input aria-label={`${frequency} Hz equalizer`} type="range" min="-12" max="12" step="1" value={equalizer.bands[i]} onChange={(e) => { const bands = equalizer.bands.slice(); bands[i] = Number(e.target.value); engine.setEqualizer(true, bands) }} />
+          </label>)}
+        </div>
+      </Section>
 
       <Section title="Keyboard shortcuts">
         <div className="grid grid-cols-1 gap-x-8 py-3 sm:grid-cols-2">

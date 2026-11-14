@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { getArtworkUrl } from '../../core/artwork'
@@ -69,14 +69,15 @@ export function NowPlaying() {
       </div>
 
       {prefs.nowPlayingEffects && !reducedMotion && (
-        <div className="lc-particles pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true" data-playing={playing}>
-          {Array.from({ length: 14 }, (_, i) => (
-            <span key={i} className="lc-particle" style={{
-              left: `${8 + ((i * 37) % 85)}%`, top: `${12 + ((i * 53) % 76)}%`,
-              animationDelay: `${-(i * 0.83)}s`, animationDuration: `${7 + (i % 5) * 1.4}s`,
-              width: i % 4 === 0 ? 4 : 2, height: i % 4 === 0 ? 4 : 2,
-            }} />
-          ))}
+        <div className="lc-effects pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true" data-playing={playing} data-quality={prefs.effectQuality} data-effect={prefs.effectType}>
+          {prefs.effectType === 'aurora' ? <><i className="lc-aurora lc-aurora-one" /><i className="lc-aurora lc-aurora-two" /></> :
+            Array.from({ length: prefs.effectQuality === 'full' ? 72 : 24 }, (_, i) => (
+              <span key={i} className="lc-effect-particle" style={{
+                left: `${(i * 37.73) % 100}%`, top: `${(i * 61.3) % 100}%`,
+                animationDelay: `${-(i * 0.47)}s`, animationDuration: `${prefs.effectType === 'rain' ? 1.1 + (i % 4) * 0.18 : 5 + (i % 7) * 0.8}s`,
+                '--size': `${2 + i % (prefs.effectQuality === 'full' ? 5 : 3)}px`,
+              } as CSSProperties} />
+            ))}
         </div>
       )}
 
@@ -95,14 +96,15 @@ export function NowPlaying() {
         <section className="flex min-w-0 flex-1 flex-col items-center justify-center">
           <div className="flex w-full max-w-[460px] flex-col">
             <Artwork
+              key={track.id}
               artworkId={track.artworkId}
               eager
               className={cn(
-                'aspect-square w-full max-w-[min(460px,48vh)] self-center rounded-[20px] shadow-[0_40px_80px_-30px_hsl(var(--lc-shadow)/0.7),0_8px_24px_-8px_hsl(var(--lc-shadow)/0.4)] transition-transform duration-700 [transition-timing-function:var(--ease-glass)]',
+                'lc-song-transition aspect-square w-full max-w-[min(460px,48vh)] self-center rounded-[20px] shadow-[0_40px_80px_-30px_hsl(var(--lc-shadow)/0.7),0_8px_24px_-8px_hsl(var(--lc-shadow)/0.4)] transition-transform duration-700 [transition-timing-function:var(--ease-glass)]',
                 playing ? 'scale-100' : 'scale-[0.94]',
               )}
             />
-            <div className="mt-8 min-w-0">
+            <div key={track.id} className="lc-song-transition mt-8 min-w-0">
               <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground">{track.title}</h1>
               <p className="mt-1 truncate text-[15px] text-muted-foreground">
                 {track.artist}

@@ -11,7 +11,12 @@ export interface PlayerState {
   muted: boolean
   duration: number
   contextLabel: string | null
+  equalizer: EqualizerSettings
 }
+
+export interface EqualizerSettings { enabled: boolean; bands: number[] }
+export const EQ_FREQUENCIES = [60, 250, 1000, 4000, 12000] as const
+const EQ_KEY = 'lucent.equalizer.v1'
 
 export interface MediaInfo {
   title: string
@@ -81,6 +86,9 @@ export class PlayerEngine {
   private time = 0
   private saveTimer: ReturnType<typeof setTimeout> | null = null
   private restoredTime = 0
+  private audioContext: AudioContext | null = null
+  private filters: BiquadFilterNode[] = []
+  private preamp: GainNode | null = null
 
   constructor(private readonly deps: PlayerDeps) {
     const s = this.readSession()
@@ -96,7 +104,9 @@ export class PlayerEngine {
       muted: s?.muted === true,
       duration: 0,
       contextLabel: s?.contextLabel ?? null,
+      equalizer: this.readEqualizer(),
     }
+    this.audio.crossOrigin = 'anonymous'
     this.audio.preload = 'auto'
     this.audio.volume = this.state.volume
     this.audio.muted = this.state.muted
@@ -267,6 +277,7 @@ export class PlayerEngine {
   }
 
   playQueue(ids: string[], startIndex = 0, contextLabel: string | null = null, forceShuffle?: boolean) {
+    this.prepareEqualizer()
     const requested = ids[Math.max(0, Math.min(Number.isFinite(startIndex) ? Math.trunc(startIndex) : 0, ids.length - 1))]
     ids = uniqueIds(ids)
     if (!ids.length) return
@@ -284,6 +295,7 @@ export class PlayerEngine {
   }
 
   play() {
+    this.prepareEqualizer()
     if (this.state.index < 0) {
       if (this.state.queue.length) {
         this.set({ index: 0 })
@@ -318,6 +330,7 @@ export class PlayerEngine {
   }
 
   next() {
+    this.prepareEqualizer()
     const { index, queue, repeat } = this.state
     if (!queue.length) return
     if (index < queue.length - 1) {
@@ -331,6 +344,7 @@ export class PlayerEngine {
   }
 
   previous() {
+    this.prepareEqualizer()
     const { index, queue, repeat } = this.state
     if (!queue.length) return
     if (this.time > 3 || (index === 0 && repeat !== 'all')) {
@@ -397,6 +411,7 @@ export class PlayerEngine {
   }
 
   jumpTo(index: number) {
+    this.prepareEqualizer()
     if (index < 0 || index >= this.state.queue.length) return
     this.set({ index })
     void this.load(true)
@@ -474,6 +489,63 @@ export class PlayerEngine {
     this.unloadSource()
     this.source = []
     this.set({ queue: [], index: -1, status: 'idle', duration: 0, contextLabel: null })
+  }
+
+  /* ---------------- equalizer ---------------- */
+  private readEqualizer(): EqualizerSettings {
+    try {
+      const raw = JSON.parse(localStorage.getItem(EQ_KEY) || 'null')
+      if (raw && Array.isArray(raw.bands) && raw.bands.length === EQ_FREQUENCIES.length && raw.bands.every((n: unknown) => typeof n === 'number' && Number.isFinite(n))) {
+        return { enabled: raw.enabled === true, bands: raw.bands.map((n: number) => Math.max(-12, Math.min(12, n))) }
+      }
+    } catch { /* use flat */ }
+    return { enabled: false, bands: EQ_FREQUENCIES.map(() => 0) }
+  }
+
+  private prepareEqualizer(): boolean {
+    if (!this.state.equalizer.enabled && !this.audioContext) return true
+    try {
+      if (!this.audioContext) {
+        const ctx = new AudioContext()
+        const source = ctx.createMediaElementSource(this.audio)
+        // Connect a safe passthrough immediately, even if constructing filters fails.
+        source.connect(ctx.destination)
+        const filters = EQ_FREQUENCIES.map((frequency, i) => {
+          const node = ctx.createBiquadFilter()
+          node.type = i === 0 ? 'lowshelf' : i === EQ_FREQUENCIES.length - 1 ? 'highshelf' : 'peaking'
+          node.frequency.value = frequency
+          node.Q.value = 1
+          return node
+        })
+        const preamp = ctx.createGain()
+        source.disconnect()
+        source.connect(preamp)
+        let output: AudioNode = preamp
+        for (const filter of filters) { output.connect(filter); output = filter }
+        output.connect(ctx.destination)
+        this.audioContext = ctx; this.filters = filters; this.preamp = preamp
+        this.applyEqualizer()
+      }
+      if (this.audioContext.state === 'suspended') void this.audioContext.resume().catch(() => undefined)
+      return true
+    } catch {
+      this.deps.onError('The equalizer is unavailable on this device.')
+      return false
+    }
+  }
+  private applyEqualizer() {
+    const { enabled, bands } = this.state.equalizer
+    this.filters.forEach((filter, i) => { filter.gain.value = enabled ? bands[i]! : 0 })
+    // Leave headroom for positive boosts; this prevents clipping on loud recordings.
+    if (this.preamp) this.preamp.gain.value = enabled ? Math.pow(10, -Math.max(0, ...bands) / 20) : 1
+  }
+  setEqualizer(enabled: boolean, bands: number[]) {
+    if (bands.length !== EQ_FREQUENCIES.length || !bands.every(Number.isFinite)) return
+    const equalizer = { enabled, bands: bands.map((n) => Math.max(-12, Math.min(12, n))) }
+    this.set({ equalizer })
+    if (enabled && !this.prepareEqualizer()) { equalizer.enabled = false; this.set({ equalizer: { ...equalizer } }) }
+    this.applyEqualizer()
+    try { localStorage.setItem(EQ_KEY, JSON.stringify(equalizer)) } catch { /* unavailable */ }
   }
 
   /* ---------------- OS media integration ---------------- */

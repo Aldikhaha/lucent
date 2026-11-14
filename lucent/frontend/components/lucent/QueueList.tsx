@@ -71,6 +71,7 @@ export function QueueList() {
   const engine = usePlayer()
   const { queue, index, status, contextLabel, repeat } = usePlayerState()
   const upcoming = queue.slice(index + 1)
+  const previous = queue.slice(0, index)
 
   if (index < 0) {
     return (
@@ -83,6 +84,11 @@ export function QueueList() {
 
   return (
     <div className="flex flex-col gap-5">
+      <p className="px-2 text-xs text-muted-foreground">Playback queue · {queue.length} songs. Saved playlists are managed separately.</p>
+      {previous.length > 0 && <section>
+        <h3 className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Played</h3>
+        {previous.map((id, i) => <QueueRow key={id} id={id} index={i} onRemove={() => engine.removeFromQueue(i)} />)}
+      </section>}
       <section>
         <h3 className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Now playing</h3>
         <QueueRow id={queue[index]!} index={index} current playing={status === 'playing'} />
@@ -105,7 +111,7 @@ export function QueueList() {
         {upcoming.length ? (
           <div className="flex flex-col">
             {upcoming.map((id, i) => (
-              <QueueRow key={`${id}-${index + 1 + i}`} id={id} index={index + 1 + i} onRemove={() => engine.removeFromQueue(index + 1 + i)} />
+              <QueueRow key={id} id={id} index={index + 1 + i} onRemove={() => engine.removeFromQueue(index + 1 + i)} />
             ))}
           </div>
         ) : (

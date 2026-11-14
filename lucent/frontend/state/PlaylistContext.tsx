@@ -1,11 +1,13 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
+import { deletePlaylistCover, savePlaylistCover } from '../core/playlistCovers'
 
 export interface Playlist {
   id: string
   name: string
   trackIds: string[]
   createdAt: number
+  coverRevision: number
 }
 
 const KEY = 'lucent.playlists.v1'
@@ -28,6 +30,7 @@ function readPlaylists(): Playlist[] {
           name: p.name.trim().slice(0, 100),
           trackIds: cleanIds(p.trackIds),
           createdAt: Number.isFinite(p.createdAt) ? p.createdAt! : 0,
+          coverRevision: Number.isFinite(p.coverRevision) ? p.coverRevision! : 0,
         },
       ]
     })
@@ -45,6 +48,7 @@ interface PlaylistContextValue {
   removeTrack: (id: string, trackId: string) => void
   moveTrack: (id: string, trackId: string, direction: -1 | 1) => void
   removeFromAll: (ids: Set<string>) => void
+  setCover: (id: string, file: File | null) => Promise<void>
 }
 
 const Context = createContext<PlaylistContextValue | null>(null)
@@ -74,7 +78,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
       const id = crypto.randomUUID()
       update((old) => [
         ...old,
-        { id, name: trimmed, trackIds: initialTrackId ? [initialTrackId] : [], createdAt: Date.now() },
+        { id, name: trimmed, trackIds: initialTrackId ? [initialTrackId] : [], createdAt: Date.now(), coverRevision: 0 },
       ])
       return id
     },
@@ -93,7 +97,13 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     },
     [update],
   )
-  const remove = useCallback((id: string) => update((old) => old.filter((p) => p.id !== id)), [update])
+  const remove = useCallback((id: string) => { update((old) => old.filter((p) => p.id !== id)); void deletePlaylistCover(id).catch(() => undefined) }, [update])
+  const setCover = useCallback(async (id: string, file: File | null) => {
+    if (!current.current.some((p) => p.id === id)) throw new Error('Playlist not found.')
+    if (file) await savePlaylistCover(id, file)
+    else await deletePlaylistCover(id)
+    update((old) => old.map((p) => p.id === id ? { ...p, coverRevision: file ? Date.now() : 0 } : p))
+  }, [update])
   const addTrack = useCallback(
     (id: string, trackId: string) => {
       const playlist = current.current.find((p) => p.id === id)
@@ -134,8 +144,8 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     [update],
   )
   const value = useMemo(
-    () => ({ playlists, create, rename, remove, addTrack, removeTrack, moveTrack, removeFromAll }),
-    [playlists, create, rename, remove, addTrack, removeTrack, moveTrack, removeFromAll],
+    () => ({ playlists, create, rename, remove, addTrack, removeTrack, moveTrack, removeFromAll, setCover }),
+    [playlists, create, rename, remove, addTrack, removeTrack, moveTrack, removeFromAll, setCover],
   )
   return <Context.Provider value={value}>{children}</Context.Provider>
 }
