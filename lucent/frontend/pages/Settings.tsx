@@ -14,7 +14,7 @@ import { Slider } from '../lib/shadcn/slider'
 import { Switch } from '../lib/shadcn/switch'
 import { ToggleGroup, ToggleGroupItem } from '../lib/shadcn/toggle-group'
 
-export const APP_VERSION = '3.0.0'
+export const APP_VERSION = '3.0.1'
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (

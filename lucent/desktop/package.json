@@ -1,7 +1,7 @@
 {
   "name": "lucent-desktop",
   "private": true,
-  "version": "3.0.0",
+  "version": "3.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "app:dev": "tauri dev",
     "app:build": "tauri build",
     "app:icons": "tauri icon app-icon.svg",
-    "test": "tsx --test ../../tests/player.test.ts"
+    "test": "tsx --test ../../tests/player.test.ts",
+    "test:ui": "node ../../tests/track-transition.browser.cjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -43,6 +44,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.1.0",
     "autoprefixer": "10.4.27",
+    "playwright": "1.65.1",
     "postcss": "8.5.23",
     "tailwindcss": "3.4.19",
     "tailwindcss-animate": "1.0.7",

@@ -1,12 +1,10 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 import { getArtworkUrl } from '../../core/artwork'
-import { albumKey } from '../../state/LibraryContext'
 import { useCurrentTrack, usePlayerState } from '../../state/PlayerContext'
 import { useUi } from '../../state/UiContext'
 import { usePrefs } from '../../state/PrefsContext'
-import { Artwork } from './Artwork'
+import { TrackTransition } from './TrackTransition'
 import { IconButton } from './IconButton'
 import { PlaybackControls } from './PlaybackControls'
 import { QueueList } from './QueueList'
@@ -22,18 +20,18 @@ export function NowPlaying() {
   const { prefs, reducedMotion } = usePrefs()
   const track = useCurrentTrack()
   const { status, contextLabel } = usePlayerState()
-  const navigate = useNavigate()
   const [panelOpen, setPanelOpen] = useState(true)
   const [panel, setPanel] = useState<Panel>('queue')
-  const [bgUrl, setBgUrl] = useState<string | null>(null)
+  const [background, setBackground] = useState<{ id: string; url: string | null } | null>(null)
 
   useEffect(() => {
     let cancelled = false
     if (!track?.artworkId) {
-      setBgUrl(null)
+      setBackground(null)
       return
     }
-    void getArtworkUrl(track.artworkId).then((u) => !cancelled && setBgUrl(u))
+    const id = track.artworkId
+    void getArtworkUrl(id).then((url) => !cancelled && setBackground({ id, url }))
     return () => {
       cancelled = true
     }
@@ -49,6 +47,7 @@ export function NowPlaying() {
 
   if (!nowPlayingOpen || !track) return null
   const playing = status === 'playing' || status === 'loading'
+  const bgUrl = track.artworkId && background?.id === track.artworkId ? background.url : null
 
   return (
     <div
@@ -95,32 +94,7 @@ export function NowPlaying() {
       <div className="relative z-10 flex min-h-0 flex-1 gap-8 px-8 pb-8 pt-4 lg:px-14">
         <section className="flex min-w-0 flex-1 flex-col items-center justify-center">
           <div className="flex w-full max-w-[460px] flex-col">
-            <Artwork
-              key={track.id}
-              artworkId={track.artworkId}
-              eager
-              className={cn(
-                'lc-song-transition aspect-square w-full max-w-[min(460px,48vh)] self-center rounded-[20px] shadow-[0_40px_80px_-30px_hsl(var(--lc-shadow)/0.7),0_8px_24px_-8px_hsl(var(--lc-shadow)/0.4)] transition-transform duration-700 [transition-timing-function:var(--ease-glass)]',
-                playing ? 'scale-100' : 'scale-[0.94]',
-              )}
-            />
-            <div key={track.id} className="lc-song-transition mt-8 min-w-0">
-              <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground">{track.title}</h1>
-              <p className="mt-1 truncate text-[15px] text-muted-foreground">
-                {track.artist}
-                <span className="mx-1.5 opacity-50">·</span>
-                <button
-                  type="button"
-                  className="lc-focus rounded hover:text-foreground hover:underline"
-                  onClick={() => {
-                    setNowPlayingOpen(false)
-                    navigate(`/albums/${albumKey(track)}`)
-                  }}
-                >
-                  {track.album}
-                </button>
-              </p>
-            </div>
+            <TrackTransition track={track} playing={playing} reducedMotion={reducedMotion} />
             <SeekBar className="mt-6" showTimes timeClassName="text-xs" />
             <PlaybackControls
               size="large"

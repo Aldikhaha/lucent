@@ -52,7 +52,7 @@ pnpm test                         # queue regression tests
 pnpm tauri build --bundles nsis
 ```
 
-Output: `src-tauri/target/release/bundle/nsis/Lucent_3.0.0_x64-setup.exe` (per-user, no admin).
+Output: `src-tauri/target/release/bundle/nsis/Lucent_3.0.1_x64-setup.exe` (per-user, no admin).
 
 ## What changes on desktop
 

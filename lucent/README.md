@@ -34,6 +34,8 @@ The workflow runs on pushes to main and can also be run manually for a chosen br
 cd lucent/desktop
 pnpm install --ignore-workspace --frozen-lockfile
 pnpm test
+pnpm exec playwright install chromium
+pnpm test:ui
 pnpm app:icons
 pnpm app:dev
 # Or build the installer:
