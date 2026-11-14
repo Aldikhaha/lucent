@@ -297,7 +297,7 @@ export default function Settings() {
         <div className="grid grid-cols-1 gap-3 py-4 sm:grid-cols-5">
           {EQ_FREQUENCIES.map((frequency, i) => <label key={frequency} className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground">
             <span>{frequency >= 1000 ? `${frequency / 1000} kHz` : `${frequency} Hz`} · {equalizer.bands[i]} dB</span>
-            <input aria-label={`${frequency} Hz equalizer`} type="range" min="-12" max="12" step="1" value={equalizer.bands[i]} onChange={(e) => { const bands = equalizer.bands.slice(); bands[i] = Number(e.target.value); engine.setEqualizer(true, bands) }} />
+            <input className="w-full accent-[color:var(--lc-accent)]" aria-label={`${frequency} Hz equalizer`} type="range" min="-12" max="12" step="1" value={equalizer.bands[i]} onChange={(e) => { const bands = equalizer.bands.slice(); bands[i] = Number(e.target.value); engine.setEqualizer(true, bands) }} />
           </label>)}
         </div>
       </Section>

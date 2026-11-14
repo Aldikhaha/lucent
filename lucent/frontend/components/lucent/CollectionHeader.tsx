@@ -51,7 +51,7 @@ export function CollectionHeader({
         <h1 className="mt-1.5 truncate text-[32px] font-semibold leading-tight tracking-tight text-foreground">{title}</h1>
         {subtitle && <div className="mt-1 truncate text-[15px] text-foreground/80">{subtitle}</div>}
         <div className="mt-1 text-xs text-muted-foreground">{meta}</div>
-        <div className="mt-5 flex items-center gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           <button
             type="button"
             disabled={!trackIds.length}

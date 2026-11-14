@@ -365,8 +365,8 @@ body {
 /* V3 atmosphere: bounded, compositor-friendly, and paused outside playback. */
 .lc-effect-particle { position:absolute; display:block; width:var(--size); height:var(--size); border-radius:50%; background:var(--lc-accent); box-shadow:0 0 12px var(--lc-accent); opacity:.65; animation:lc-drift 7s ease-in-out infinite alternate; }
 .lc-effects[data-quality='full'][data-effect='particles'] .lc-effect-particle { box-shadow:0 0 8px var(--lc-accent),0 0 24px var(--lc-accent); }
-.lc-effects[data-effect='rain'] .lc-effect-particle { width:1.5px; height:calc(var(--size) * 8); border-radius:5px; background:linear-gradient(transparent, var(--lc-accent)); box-shadow:none; opacity:.52; animation-name:lc-rain; animation-timing-function:linear; animation-iteration-count:infinite; }
-.lc-effects[data-effect='snow'] .lc-effect-particle { background: hsl(var(--foreground)); box-shadow:0 0 9px hsl(var(--foreground) / .6); opacity:.7; animation-name:lc-snow; animation-timing-function:linear; animation-iteration-count:infinite; }
+.lc-effects[data-effect='rain'] .lc-effect-particle { width:1.5px; height:calc(var(--size) * 8); border-radius:5px; background:linear-gradient(transparent, var(--lc-accent)); box-shadow:none; opacity:.52; animation-name:lc-rain; animation-timing-function:linear; animation-iteration-count:infinite; animation-direction:normal; }
+.lc-effects[data-effect='snow'] .lc-effect-particle { background:#fff; box-shadow:0 0 2px rgba(35,65,90,.8),0 0 9px rgba(110,168,215,.75); opacity:.9; animation-name:lc-snow; animation-timing-function:linear; animation-iteration-count:infinite; animation-direction:normal; }
 .lc-aurora { position:absolute; width:65%; height:60%; border-radius:50%; filter:blur(75px); background:var(--lc-accent); opacity:.20; animation:lc-aurora 12s ease-in-out infinite alternate; }
 .lc-aurora-one { left:-20%; top:-10%; } .lc-aurora-two { right:-20%; bottom:-20%; animation-delay:-6s; }
 .lc-effects[data-quality='performance'] .lc-aurora { filter:blur(40px); animation-duration:18s; }

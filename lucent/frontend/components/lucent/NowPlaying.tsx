@@ -154,7 +154,7 @@ export function NowPlaying() {
                       panel === p ? 'lc-active text-foreground' : 'text-muted-foreground enabled:hover:text-foreground',
                     )}
                   >
-                    {p === 'queue' ? 'Up Next' : 'Lyrics'}
+                    {p === 'queue' ? 'Queue' : 'Lyrics'}
                   </button>
                 )
               })}

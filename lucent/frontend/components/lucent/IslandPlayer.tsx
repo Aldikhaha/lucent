@@ -9,7 +9,7 @@ export function IslandPlayer({ onExpand }: { onExpand: () => void }) {
   const track = useCurrentTrack()
   const { status, queue } = usePlayerState()
   const playing = status === 'playing' || status === 'loading'
-  const control = 'lc-focus flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-[hsl(var(--lc-hover)/0.1)] disabled:opacity-30'
+  const control = 'lc-focus flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-[hsl(var(--lc-hover)/0.1)] disabled:opacity-30'
   return <main className="h-screen p-2 text-foreground">
     <div className="lc-glass-float flex h-full flex-col justify-center rounded-[28px] px-4 shadow-xl">
       <div data-tauri-drag-region={isDesktop ? '' : undefined} className="flex min-w-0 items-center gap-3">
