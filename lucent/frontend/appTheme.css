@@ -1,0 +1,44 @@
+/* Lucent palette — charcoal / graphite with soft white type. Overrides the base theme tokens. */
+:root:root {
+  --background: 220 14% 94%;
+  --foreground: 225 14% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 225 14% 11%;
+  --popover: 0 0% 99%;
+  --popover-foreground: 225 14% 11%;
+  --primary: 225 14% 12%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 220 12% 89%;
+  --secondary-foreground: 225 14% 11%;
+  --muted: 220 12% 90%;
+  --muted-foreground: 222 7% 41%;
+  --body-foreground: 225 10% 22%;
+  --accent: 220 12% 88%;
+  --accent-foreground: 225 14% 11%;
+  --border: 220 12% 84%;
+  --input: 220 12% 82%;
+  --ring: 225 14% 30%;
+  --radius: 0.625rem;
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', Inter, system-ui, -apple-system, sans-serif;
+}
+
+:root.dark {
+  --background: 220 8% 6%;
+  --foreground: 0 0% 94%;
+  --card: 220 6% 11%;
+  --card-foreground: 0 0% 94%;
+  --popover: 220 7% 12%;
+  --popover-foreground: 0 0% 94%;
+  --primary: 0 0% 95%;
+  --primary-foreground: 220 8% 8%;
+  --secondary: 220 5% 16%;
+  --secondary-foreground: 0 0% 94%;
+  --muted: 220 5% 15%;
+  --muted-foreground: 220 6% 63%;
+  --body-foreground: 220 6% 82%;
+  --accent: 220 5% 18%;
+  --accent-foreground: 0 0% 96%;
+  --border: 220 5% 17%;
+  --input: 220 5% 20%;
+  --ring: 0 0% 80%;
+}

@@ -1,0 +1,346 @@
+/* ------------------------------------------------------------------
+   LUCENT — Liquid Glass material system
+   ------------------------------------------------------------------ */
+
+:root {
+  --glass-alpha: 0.52;
+  --glass-blur: 28px;
+  /* Accent (dynamic, from artwork) */
+  --accent-h: 214;
+  --accent-s: 14%;
+  /* Light mode materials */
+  --lc-glass: 0 0% 100%;
+  --lc-stroke: 220 20% 10%;
+  --lc-stroke-a: 0.07;
+  --lc-edge-a: 0.75;
+  --lc-shadow: 220 30% 20%;
+  --lc-shadow-a: 0.14;
+  --lc-hover: 220 20% 10%;
+  --lc-accent: hsl(var(--accent-h) var(--accent-s) 38%);
+  --lc-accent-soft: hsl(var(--accent-h) var(--accent-s) 38% / 0.12);
+  --lc-ambient-opacity: 0.42;
+  --ease-glass: cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+
+:root.dark {
+  --lc-glass: 220 7% 15%;
+  --lc-stroke: 0 0% 100%;
+  --lc-stroke-a: 0.075;
+  --lc-edge-a: 0.09;
+  --lc-shadow: 0 0% 0%;
+  --lc-shadow-a: 0.5;
+  --lc-hover: 0 0% 100%;
+  --lc-accent: hsl(var(--accent-h) var(--accent-s) 70%);
+  --lc-accent-soft: hsl(var(--accent-h) var(--accent-s) 70% / 0.14);
+  --lc-ambient-opacity: 0.3;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--lc-accent-soft);
+}
+
+/* ---------------- Glass surfaces ---------------- */
+
+.lc-glass,
+.lc-glass-float,
+.lc-glass-menu {
+  background: hsl(var(--lc-glass) / var(--glass-alpha));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  border: 1px solid hsl(var(--lc-stroke) / var(--lc-stroke-a));
+  box-shadow:
+    inset 0 1px 0 0 hsl(0 0% 100% / var(--lc-edge-a)),
+    0 1px 2px hsl(var(--lc-shadow) / calc(var(--lc-shadow-a) * 0.5));
+}
+
+.lc-glass-float {
+  background: hsl(var(--lc-glass) / calc(var(--glass-alpha) + 0.14));
+  box-shadow:
+    inset 0 1px 0 0 hsl(0 0% 100% / var(--lc-edge-a)),
+    inset 0 0 0 0.5px hsl(0 0% 100% / calc(var(--lc-edge-a) * 0.4)),
+    0 24px 48px -20px hsl(var(--lc-shadow) / var(--lc-shadow-a)),
+    0 4px 12px -4px hsl(var(--lc-shadow) / calc(var(--lc-shadow-a) * 0.6));
+}
+
+.lc-glass-menu {
+  background: hsl(var(--lc-glass) / max(0.78, calc(var(--glass-alpha) + 0.3)));
+  box-shadow:
+    inset 0 1px 0 0 hsl(0 0% 100% / var(--lc-edge-a)),
+    0 16px 40px -12px hsl(var(--lc-shadow) / var(--lc-shadow-a));
+}
+
+.lc-hairline {
+  border-color: hsl(var(--lc-stroke) / var(--lc-stroke-a));
+}
+
+.lc-hover:hover {
+  background: hsl(var(--lc-hover) / 0.05);
+}
+
+.lc-active {
+  background: hsl(var(--lc-hover) / 0.075);
+}
+
+.lc-accent-text {
+  color: var(--lc-accent);
+}
+
+.lc-accent-bg {
+  background: var(--lc-accent);
+}
+
+/* ---------------- Ambient background ---------------- */
+
+.lc-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: hsl(var(--background));
+}
+
+.lc-ambient-layer {
+  position: absolute;
+  inset: -20%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(90px) saturate(1.25);
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-glass);
+  transform: translateZ(0);
+}
+
+.lc-ambient-layer[data-visible='true'] {
+  opacity: var(--lc-ambient-opacity);
+}
+
+.lc-ambient-tint {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 85% 100%, hsl(var(--accent-h) var(--accent-s) 50% / 0.1), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 0% 0%, hsl(0 0% 100% / 0.025), transparent 70%);
+  transition: background 1.2s var(--ease-glass);
+}
+
+/* ---------------- Motion ---------------- */
+
+.lc-view-enter {
+  animation: lc-view-in 320ms var(--ease-glass) both;
+}
+
+@keyframes lc-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lc-reduce-motion *,
+.lc-reduce-motion *::before,
+.lc-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ---------------- Scrollbars ---------------- */
+
+.lc-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--lc-stroke) / 0.18) transparent;
+  scroll-behavior: smooth;
+}
+
+.lc-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.lc-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--lc-stroke) / 0.16);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.lc-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--lc-stroke) / 0.28);
+}
+
+/* ---------------- Seek / volume bars ---------------- */
+
+.lc-bar {
+  position: relative;
+  height: 4px;
+  border-radius: 999px;
+  background: hsl(var(--lc-stroke) / 0.12);
+  overflow: hidden;
+}
+
+.lc-bar-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: hsl(var(--foreground) / 0.85);
+  border-radius: inherit;
+}
+
+.lc-seek:hover .lc-bar-fill,
+.lc-seek:focus-visible .lc-bar-fill,
+.lc-seek[data-dragging='true'] .lc-bar-fill {
+  background: var(--lc-accent);
+}
+
+.lc-seek-thumb {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: hsl(var(--foreground));
+  box-shadow: 0 1px 4px hsl(0 0% 0% / 0.35);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 160ms ease,
+    transform 160ms var(--ease-glass);
+}
+
+.lc-seek:hover .lc-seek-thumb,
+.lc-seek:focus-visible .lc-seek-thumb,
+.lc-seek[data-dragging='true'] .lc-seek-thumb {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Restyle shadcn slider into a slim glass slider */
+.lc-slider [data-orientation='horizontal'] {
+  height: 4px;
+  background: hsl(var(--lc-stroke) / 0.12);
+}
+
+.lc-slider [data-orientation='horizontal'] > span {
+  background: hsl(var(--foreground) / 0.85);
+}
+
+.lc-slider:hover [data-orientation='horizontal'] > span {
+  background: var(--lc-accent);
+}
+
+.lc-slider [role='slider'] {
+  width: 12px;
+  height: 12px;
+  border: none;
+  background: hsl(var(--foreground));
+  box-shadow: 0 1px 4px hsl(0 0% 0% / 0.35);
+}
+
+/* ---------------- Artwork ---------------- */
+
+.lc-art {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--lc-stroke) / 0.06);
+  box-shadow: inset 0 0 0 1px hsl(var(--lc-stroke) / 0.06);
+}
+
+.lc-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+
+.lc-art img[data-loaded='true'] {
+  opacity: 1;
+}
+
+.lc-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px hsl(0 0% 100% / 0.06);
+  pointer-events: none;
+}
+
+/* ---------------- Equalizer indicator (only animates while playing) ---------------- */
+
+.lc-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.lc-eq span {
+  width: 2px;
+  height: 40%;
+  border-radius: 1px;
+  background: var(--lc-accent);
+}
+
+.lc-eq[data-playing='true'] span {
+  animation: lc-eq 900ms ease-in-out infinite alternate;
+}
+
+.lc-eq span:nth-child(2) {
+  animation-delay: -300ms !important;
+  height: 80%;
+}
+
+.lc-eq span:nth-child(3) {
+  animation-delay: -600ms !important;
+  height: 60%;
+}
+
+@keyframes lc-eq {
+  from {
+    transform: scaleY(0.35);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.lc-eq span {
+  transform-origin: bottom;
+}
+
+/* ---------------- Focus ---------------- */
+
+.lc-focus:focus-visible {
+  outline: 2px solid var(--lc-accent);
+  outline-offset: 2px;
+}
+
+.lc-wordmark {
+  letter-spacing: 0.32em;
+}
+
+.lc-tabular {
+  font-variant-numeric: tabular-nums;
+}

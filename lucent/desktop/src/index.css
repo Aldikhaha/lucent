@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Native-app feel: no rubber-band scrolling, and UI labels aren't text-selectable. */
+html,
+body {
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Keep text selectable where it matters (inputs, and lyrics in Now Playing). */
+input,
+textarea,
+[contenteditable='true'],
+.whitespace-pre-line {
+  user-select: text;
+  -webkit-user-select: text;
+}
