@@ -1,4 +1,4 @@
-import { Disc3, FolderOpen, FolderSearch, ListEnd, ListStart, Pause, Play, Trash2, type LucideIcon } from 'lucide-react'
+import { Disc3, FolderOpen, FolderSearch, ListEnd, ListMusic, ListStart, Pause, Play, Trash2, type LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { Track } from '../../core/types'
@@ -47,6 +47,7 @@ export function useTrackMenuActions(
     },
     { key: 'next', label: 'Play next', icon: ListStart, run: () => playNext([track.id]) },
     { key: 'queue', label: 'Add to queue', icon: ListEnd, run: () => addToQueue([track.id]) },
+    { key: 'playlist', label: 'Add to playlist…', icon: ListMusic, run: () => navigate(`/playlists?add=${encodeURIComponent(track.id)}`) },
     {
       key: 'album',
       label: 'Go to album',

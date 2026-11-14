@@ -7,6 +7,7 @@ import { isDesktop } from '../core/platform'
 import { playableUrl } from '../core/platform/desktop'
 import type { Track } from '../core/types'
 import { useLibrary } from './LibraryContext'
+import { usePlaylists } from './PlaylistContext'
 
 const PlayerContext = createContext<PlayerEngine | null>(null)
 
@@ -75,38 +76,42 @@ export function useCurrentTrack(): Track | null {
 export function useTrackActions() {
   const engine = usePlayer()
   const library = useLibrary()
+  const { removeFromAll } = usePlaylists()
 
   const removeTracks = useCallback(
     async (ids: string[]) => {
       try {
         engine.removeTracks(new Set(ids))
         await library.removeTracks(ids)
+        removeFromAll(new Set(ids))
         toast(`Removed ${ids.length === 1 ? 'song' : `${ids.length} songs`} from library`)
       } catch {
         toast.error('Could not remove from library')
       }
     },
-    [engine, library],
+    [engine, library, removeFromAll],
   )
 
   const clearLibrary = useCallback(async () => {
     engine.reset()
+    const removed = new Set(library.tracks.map((t) => t.id))
     await library.clearLibrary()
+    removeFromAll(removed)
     toast('Library cleared')
-  }, [engine, library])
+  }, [engine, library, removeFromAll])
 
   const playNext = useCallback(
     (ids: string[]) => {
-      engine.playNext(ids)
-      toast(ids.length === 1 ? 'Playing next' : `${ids.length} songs playing next`)
+      const count = engine.playNext(ids)
+      toast(count ? (count === 1 ? 'Playing next' : `${count} songs playing next`) : 'Already playing')
     },
     [engine],
   )
 
   const addToQueue = useCallback(
     (ids: string[]) => {
-      engine.addToQueue(ids)
-      toast(ids.length === 1 ? 'Added to queue' : `${ids.length} songs added to queue`)
+      const count = engine.addToQueue(ids)
+      toast(count ? (count === 1 ? 'Added to queue' : `${count} songs added to queue`) : 'Already in queue')
     },
     [engine],
   )

@@ -49,6 +49,11 @@ interface Session {
   contextLabel: string | null
 }
 
+/** Each song appears at most once in a queue. Repeat is controlled by the repeat setting. */
+function uniqueIds(ids: string[]): string[] {
+  return [...new Set(ids.filter((id): id is string => typeof id === 'string' && id.length > 0))]
+}
+
 function shuffled<T>(arr: T[]): T[] {
   const a = arr.slice()
   for (let i = a.length - 1; i > 0; i--) {
@@ -79,16 +84,16 @@ export class PlayerEngine {
 
   constructor(private readonly deps: PlayerDeps) {
     const s = this.readSession()
-    this.source = s?.source ?? []
-    this.restoredTime = s?.time ?? 0
+    this.source = uniqueIds(Array.isArray(s?.source) ? s.source : [])
+    this.restoredTime = typeof s?.time === 'number' && Number.isFinite(s.time) ? Math.max(0, s.time) : 0
     this.state = {
-      queue: s?.queue ?? [],
-      index: s?.index ?? -1,
+      queue: Array.isArray(s?.queue) ? s.queue : [],
+      index: Number.isInteger(s?.index) ? s!.index : -1,
       status: 'idle',
-      repeat: s?.repeat ?? 'off',
-      shuffle: s?.shuffle ?? false,
-      volume: s?.volume ?? 0.8,
-      muted: s?.muted ?? false,
+      repeat: s?.repeat === 'all' || s?.repeat === 'one' ? s.repeat : 'off',
+      shuffle: s?.shuffle === true,
+      volume: typeof s?.volume === 'number' && Number.isFinite(s.volume) ? Math.max(0, Math.min(1, s.volume)) : 0.8,
+      muted: s?.muted === true,
       duration: 0,
       contextLabel: s?.contextLabel ?? null,
     }
@@ -174,7 +179,9 @@ export class PlayerEngine {
       this.set({ status: 'idle', duration: 0 })
       return
     }
-    this.set({ status: autoplay ? 'loading' : this.state.status === 'idle' ? 'paused' : this.state.status })
+    // Stop the old source immediately, including when loading the new file fails.
+    this.unloadSource()
+    this.set({ duration: 0, status: autoplay ? 'loading' : 'paused' })
     let src: PlaybackSource | null
     try {
       src = await this.deps.loadSource(id)
@@ -197,7 +204,9 @@ export class PlayerEngine {
     this.source_ = src
     this.audio.src = src.url
     if (startAt > 0) {
-      this.audio.addEventListener('loadedmetadata', () => (this.audio.currentTime = startAt), { once: true })
+      this.audio.addEventListener('loadedmetadata', () => {
+        if (token === this.loadToken) this.audio.currentTime = Math.min(startAt, Number.isFinite(this.audio.duration) ? this.audio.duration : startAt)
+      }, { once: true })
     }
     this.setTime(startAt)
     void this.updateMetadata(id)
@@ -244,24 +253,30 @@ export class PlayerEngine {
 
   /** Restores the previous session once the library is known (never autoplays). */
   restore(validIds: Set<string>) {
-    const keep = (ids: string[]) => ids.filter((id) => validIds.has(id))
     const currentId = this.currentId
-    const queue = keep(this.state.queue)
-    this.source = keep(this.source)
-    const index = currentId ? queue.indexOf(currentId) : -1
+    const queue = uniqueIds(this.state.queue.filter((id) => validIds.has(id)))
+    // Old sessions may contain duplicates or an inconsistent unshuffled source.
+    const queuedIds = new Set(queue)
+    const source = uniqueIds(this.source.filter((id) => validIds.has(id) && queuedIds.has(id)))
+    const sourceIds = new Set(source)
+    this.source = [...source, ...queue.filter((id) => !sourceIds.has(id))]
+    const restoredIndex = currentId ? queue.indexOf(currentId) : -1
+    const index = restoredIndex >= 0 ? restoredIndex : queue.length ? 0 : -1
     this.set({ queue, index })
-    if (index >= 0) void this.load(false, currentId === this.currentId ? this.restoredTime : 0)
+    if (index >= 0) void this.load(false, restoredIndex >= 0 ? this.restoredTime : 0)
   }
 
   playQueue(ids: string[], startIndex = 0, contextLabel: string | null = null, forceShuffle?: boolean) {
+    const requested = ids[Math.max(0, Math.min(Number.isFinite(startIndex) ? Math.trunc(startIndex) : 0, ids.length - 1))]
+    ids = uniqueIds(ids)
     if (!ids.length) return
     const shuffle = forceShuffle ?? this.state.shuffle
     this.source = ids.slice()
     let queue = ids.slice()
-    let index = Math.max(0, Math.min(startIndex, ids.length - 1))
+    let index = Math.max(0, requested ? ids.indexOf(requested) : 0)
     if (shuffle) {
-      const start = forceShuffle ? (ids[Math.floor(Math.random() * ids.length)] as string) : ids[index]!
-      queue = [start, ...shuffled(ids.filter((_, i) => i !== ids.indexOf(start)))]
+      const start = forceShuffle ? ids[Math.floor(Math.random() * ids.length)]! : ids[index]!
+      queue = [start, ...shuffled(ids.filter((id) => id !== start))]
       index = 0
     }
     this.set({ queue, index, shuffle, contextLabel })
@@ -387,22 +402,38 @@ export class PlayerEngine {
     void this.load(true)
   }
 
-  playNext(ids: string[]) {
-    if (!ids.length) return
-    if (this.state.index < 0) return this.playQueue(ids, 0, 'Queue')
-    const queue = this.state.queue.slice()
-    queue.splice(this.state.index + 1, 0, ...ids)
-    const cur = this.currentId
-    const srcIdx = cur ? this.source.indexOf(cur) : -1
-    this.source.splice(srcIdx + 1, 0, ...ids)
-    this.set({ queue })
+  /** Move selected songs to next, rather than creating duplicate queue entries. */
+  playNext(ids: string[]): number {
+    ids = uniqueIds(ids).filter((id) => id !== this.currentId)
+    if (!ids.length) return 0
+    if (this.state.index < 0) {
+      this.playQueue(ids, 0, 'Queue')
+      return ids.length
+    }
+    const current = this.currentId!
+    const chosen = new Set(ids)
+    const queue = this.state.queue.filter((id) => !chosen.has(id))
+    const index = queue.indexOf(current)
+    queue.splice(index + 1, 0, ...ids)
+    this.source = this.source.filter((id) => !chosen.has(id))
+    const srcIndex = this.source.indexOf(current)
+    this.source.splice(srcIndex < 0 ? this.source.length : srcIndex + 1, 0, ...ids)
+    this.set({ queue, index })
+    return ids.length
   }
 
-  addToQueue(ids: string[]) {
-    if (!ids.length) return
-    if (this.state.index < 0) return this.playQueue(ids, 0, 'Queue')
+  /** Ignore tracks already present; use Repeat to intentionally replay a song. */
+  addToQueue(ids: string[]): number {
+    const existing = new Set(this.state.queue)
+    ids = uniqueIds(ids).filter((id) => !existing.has(id))
+    if (!ids.length) return 0
+    if (this.state.index < 0) {
+      this.playQueue(ids, 0, 'Queue')
+      return ids.length
+    }
     this.source.push(...ids)
     this.set({ queue: [...this.state.queue, ...ids] })
+    return ids.length
   }
 
   removeFromQueue(index: number) {
@@ -416,7 +447,8 @@ export class PlayerEngine {
 
   clearUpcoming() {
     const queue = this.state.queue.slice(0, this.state.index + 1)
-    this.source = queue.slice()
+    const kept = new Set(queue)
+    this.source = this.source.filter((id) => kept.has(id))
     this.set({ queue })
   }
 
@@ -426,9 +458,12 @@ export class PlayerEngine {
     const queue = this.state.queue.filter((id) => !ids.has(id))
     this.source = this.source.filter((id) => !ids.has(id))
     if (cur && ids.has(cur)) {
-      this.unloadSource()
+      const priorCount = this.state.queue.slice(0, this.state.index).filter((id) => !ids.has(id)).length
       this.loadToken++
-      this.set({ queue, index: -1, status: 'idle', duration: 0 })
+      this.unloadSource()
+      const index = queue.length ? Math.min(priorCount, queue.length - 1) : -1
+      this.set({ queue, index, status: index < 0 ? 'idle' : 'paused', duration: 0, ...(index < 0 ? { contextLabel: null } : {}) })
+      if (index >= 0) void this.load(false)
     } else {
       this.set({ queue, index: cur ? queue.indexOf(cur) : -1 })
     }

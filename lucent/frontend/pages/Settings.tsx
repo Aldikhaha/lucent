@@ -221,6 +221,14 @@ export default function Settings() {
             </ToggleGroupItem>
           </ToggleGroup>
         </Row>
+        <Row label="Now Playing particles" hint="Subtle ambience; disabled when reduced motion is active">
+          <Switch
+            aria-label="Now Playing particles"
+            checked={prefs.nowPlayingEffects}
+            onCheckedChange={(v) => setPref('nowPlayingEffects', v)}
+            className="data-[state=checked]:bg-[color:var(--lc-accent)]"
+          />
+        </Row>
         <Row label="Compact mode" hint="Denser lists and a slimmer player">
           <Switch
             aria-label="Compact mode"

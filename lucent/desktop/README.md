@@ -21,48 +21,38 @@ desktop/
 
 ## Get a ready-made installer (no tools needed)
 
-The workflow in `.github/workflows/windows-installer.yml` builds everything on a GitHub-hosted Windows machine.
+Open **Actions → Build Windows installer** in the repository, select a successful run and download **Lucent-Windows-Installer**. Extract the ZIP and run the setup EXE. The installer is built on GitHub's Windows runner and includes the offline WebView2 installer. Actions artifacts require GitHub sign-in and expire under the repository's retention policy.
 
-1. Put this project in a GitHub repository (Retool source control, or push it yourself).
-2. On GitHub: **Actions > Build Windows app > Run workflow**. It takes about 10-15 minutes.
-3. Open the finished run and download **Lucent-Windows**. It contains:
-   - `Lucent_0.1.0_x64-setup.exe`: the recommended installer. Per-user, no admin needed. Includes WebView2, so it works offline.
-   - `Lucent_0.1.0_x64_en-US.msi`: for IT deployment (Intune, Group Policy).
-   - `Lucent-portable.exe`: single file, no install. Needs WebView2, which Windows 10/11 already include. No file associations.
-
-Pushing a tag such as `v0.1.0` also publishes these files as a GitHub Release.
-
-The installers aren't code-signed, so Windows SmartScreen shows "Windows protected your PC" the first time;
-choose **More info > Run anyway**. Code signing needs a certificate and can be added to the workflow later.
+The workflow lives in the repository root at `.github/workflows/build-windows.yml`. It runs on pushes to `main` or manually for a selected branch. The installer is unsigned, so Windows SmartScreen may show a warning.
 
 ## Prerequisites for building locally (Windows 10/11)
 
 1. **Rust**: install from <https://rustup.rs> (MSVC toolchain, the default).
 2. **Microsoft C++ Build Tools**: Visual Studio Installer > "Desktop development with C++".
 3. **WebView2**: preinstalled on Windows 10 (April 2018+) and 11.
-4. **Node.js 20+** and **pnpm**: `npm i -g pnpm`.
+4. **Node.js 22** and **pnpm**: `npm i -g pnpm`.
 
 ## First run
 
 Get the repository (both `frontend/` and `desktop/` are needed), then from `desktop/`:
 
 ```powershell
-pnpm install --ignore-workspace   # desktop/ is standalone; don't install the Retool workspace
+pnpm install --ignore-workspace --frozen-lockfile   # desktop/ is standalone
 pnpm app:icons                    # generates src-tauri/icons/* from app-icon.svg (required once)
 pnpm app:dev                      # opens the app with hot reload
 ```
 
-`--ignore-workspace` matters: the repo root has a `pnpm-workspace.yaml` for the Retool sandbox.
+`--ignore-workspace` keeps this desktop package independent of any surrounding pnpm workspace.
 `../frontend` does not need its own `node_modules`.
 
 ## Build the installer
 
 ```powershell
-pnpm app:build
+pnpm test                         # queue regression tests
+pnpm tauri build --bundles nsis
 ```
 
-Output: `src-tauri/target/release/bundle/nsis/Lucent_0.1.0_x64-setup.exe` (per-user, no admin) and
-`src-tauri/target/release/bundle/msi/Lucent_0.1.0_x64_en-US.msi`.
+Output: `src-tauri/target/release/bundle/nsis/Lucent_2.0.0_x64-setup.exe` (per-user, no admin).
 
 ## What changes on desktop
 

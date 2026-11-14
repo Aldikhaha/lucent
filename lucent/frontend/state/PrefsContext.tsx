@@ -9,6 +9,8 @@ export interface Prefs {
   /** Backdrop blur in px */
   blur: number
   motion: MotionPref
+  /** Decorative particles in the full-screen player. */
+  nowPlayingEffects: boolean
   compact: boolean
   sidebarCollapsed: boolean
   songSort: SongSort
@@ -24,6 +26,7 @@ export const DEFAULT_PREFS: Prefs = {
   transparency: 55,
   blur: 28,
   motion: 'system',
+  nowPlayingEffects: true,
   compact: false,
   sidebarCollapsed: false,
   songSort: 'added',

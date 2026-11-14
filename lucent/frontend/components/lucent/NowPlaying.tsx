@@ -5,6 +5,7 @@ import { getArtworkUrl } from '../../core/artwork'
 import { albumKey } from '../../state/LibraryContext'
 import { useCurrentTrack, usePlayerState } from '../../state/PlayerContext'
 import { useUi } from '../../state/UiContext'
+import { usePrefs } from '../../state/PrefsContext'
 import { Artwork } from './Artwork'
 import { IconButton } from './IconButton'
 import { PlaybackControls } from './PlaybackControls'
@@ -18,6 +19,7 @@ type Panel = 'queue' | 'lyrics'
 /** Immersive full-window Now Playing view. */
 export function NowPlaying() {
   const { nowPlayingOpen, setNowPlayingOpen } = useUi()
+  const { prefs, reducedMotion } = usePrefs()
   const track = useCurrentTrack()
   const { status, contextLabel } = usePlayerState()
   const navigate = useNavigate()
@@ -65,6 +67,18 @@ export function NowPlaying() {
         )}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,hsl(var(--background)/0.55)_75%)]" />
       </div>
+
+      {prefs.nowPlayingEffects && !reducedMotion && (
+        <div className="lc-particles pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true" data-playing={playing}>
+          {Array.from({ length: 14 }, (_, i) => (
+            <span key={i} className="lc-particle" style={{
+              left: `${8 + ((i * 37) % 85)}%`, top: `${12 + ((i * 53) % 76)}%`,
+              animationDelay: `${-(i * 0.83)}s`, animationDuration: `${7 + (i % 5) * 1.4}s`,
+              width: i % 4 === 0 ? 4 : 2, height: i % 4 === 0 ? 4 : 2,
+            }} />
+          ))}
+        </div>
+      )}
 
       <header className="relative z-10 flex items-center justify-between px-6 pt-5">
         <IconButton label="Close Now Playing" shortcut="Esc" tooltipSide="right" onClick={() => setNowPlayingOpen(false)}>

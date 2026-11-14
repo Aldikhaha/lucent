@@ -140,13 +140,13 @@ body {
 /* ---------------- Motion ---------------- */
 
 .lc-view-enter {
-  animation: lc-view-in 320ms var(--ease-glass) both;
+  animation: lc-view-in 420ms var(--ease-glass) both;
 }
 
 @keyframes lc-view-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -343,4 +343,21 @@ body {
 
 .lc-tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Compositor-friendly interactions; the existing reduced-motion setting disables them. */
+.lc-playlist-card { transition: transform 240ms var(--ease-glass), box-shadow 240ms var(--ease-glass), background-color 240ms ease; }
+.lc-playlist-card:hover { transform: translateY(-3px); box-shadow: 0 14px 32px -20px hsl(var(--lc-shadow) / 0.55); }
+.lc-playlist-icon { background: var(--lc-accent-soft); color: var(--lc-accent); transition: transform 240ms var(--ease-glass); }
+.lc-playlist-card:hover .lc-playlist-icon { transform: scale(1.04); }
+.lc-playlist-row { transition: background-color 180ms ease, transform 220ms var(--ease-glass); }
+.lc-playlist-row:hover { transform: translateX(2px); }
+
+/* Lightweight decorative particles: only mounted in Now Playing and paused with playback. */
+.lc-particle { position: absolute; display: block; border-radius: 50%; background: var(--lc-accent); opacity: 0; animation: lc-float 9s ease-in-out infinite; }
+.lc-particles[data-playing='false'] .lc-particle { animation-play-state: paused; }
+@keyframes lc-float {
+  0%, 100% { opacity: 0; transform: translate3d(0, 10px, 0); }
+  30%, 70% { opacity: 0.32; }
+  50% { transform: translate3d(7px, -12px, 0); }
 }

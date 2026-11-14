@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Clock, Disc3, FolderTree, Home, Music, PanelLeftClose, PanelLeftOpen, Search, Settings, type LucideIcon } from 'lucide-react'
+import { Clock, Disc3, FolderTree, Home, ListMusic, Music, PanelLeftClose, PanelLeftOpen, Search, Settings, type LucideIcon } from 'lucide-react'
 import { usePrefs } from '../../state/PrefsContext'
+import { usePlaylists } from '../../state/PlaylistContext'
 import { useUi } from '../../state/UiContext'
 import { useLibrary } from '../../state/LibraryContext'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../lib/shadcn/tooltip'
@@ -53,10 +54,12 @@ export function Sidebar() {
   const { prefs, setPref } = usePrefs()
   const { searchInputRef } = useUi()
   const { tracks, albums, folders } = useLibrary()
+  const { playlists } = usePlaylists()
   const navigate = useNavigate()
   const collapsed = prefs.sidebarCollapsed
 
   const library: NavItem[] = [
+    { to: '/playlists', label: 'Playlists', icon: ListMusic, count: playlists.length },
     { to: '/songs', label: 'Songs', icon: Music, count: tracks.length },
     { to: '/albums', label: 'Albums', icon: Disc3, count: albums.length },
     { to: '/folders', label: 'Folders', icon: FolderTree, count: folders.length },

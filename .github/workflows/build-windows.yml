@@ -24,7 +24,9 @@ jobs:
           node-version: 22
       - uses: dtolnay/rust-toolchain@stable
       - name: Install dependencies
-        run: pnpm install --ignore-workspace --no-frozen-lockfile
+        run: pnpm install --ignore-workspace --frozen-lockfile
+      - name: Run queue regression tests
+        run: pnpm test
       - name: Generate app icons
         run: pnpm app:icons
       - name: Build Windows installer
