@@ -12,7 +12,7 @@
     "app:build": "tauri build",
     "app:icons": "tauri icon app-icon.svg",
     "test": "tsx --test ../../tests/player.test.ts ../../tests/spotify.test.ts",
-    "test:ui": "node ../../tests/track-transition.browser.cjs"
+    "test:ui": "node ../../tests/track-transition.browser.cjs && node ../../tests/spotify.browser.cjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "1.1.15",
