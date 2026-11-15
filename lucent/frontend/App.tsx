@@ -16,6 +16,7 @@ import { FolderDetailPage, FoldersPage } from './pages/Folders'
 import Recent from './pages/Recent'
 import Search from './pages/Search'
 import Settings from './pages/Settings'
+import SpotifyPlayer from './pages/SpotifyPlayer'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/songs" element={<Songs />} />
+                    <Route path="/spotify" element={<SpotifyPlayer />} />
                     <Route path="/playlists" element={<PlaylistsPage />} />
                     <Route path="/playlists/:playlistId" element={<PlaylistDetailPage />} />
                     <Route path="/albums" element={<AlbumsPage />} />

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Lucent",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "identifier": "app.lucent.player",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -29,14 +29,17 @@
     "security": {
       "csp": {
         "default-src": "'self'",
-        "script-src": "'self'",
+        "script-src": "'self' https://sdk.scdn.co",
         "style-src": "'self' 'unsafe-inline'",
-        "img-src": "'self' asset: http://asset.localhost blob: data:",
+        "img-src": "'self' asset: http://asset.localhost blob: data: https://i.scdn.co",
         "media-src": "'self' asset: http://asset.localhost blob:",
         "font-src": "'self' data:",
-        "connect-src": "ipc: http://ipc.localhost"
+        "connect-src": "ipc: http://ipc.localhost https://accounts.spotify.com https://api.spotify.com https://*.spotify.com https://*.scdn.co wss://*.spotify.com",
+        "frame-src": "https://sdk.scdn.co"
       },
-      "dangerousDisableAssetCspModification": ["style-src"],
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ],
       "assetProtocol": {
         "enable": true,
         "scope": []
@@ -45,7 +48,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "publisher": "Lucent",
     "category": "Music",
     "shortDescription": "Lucent music player",
@@ -59,14 +65,25 @@
     ],
     "fileAssociations": [
       {
-        "ext": ["mp3", "m4a", "aac", "flac", "wav", "ogg", "oga", "opus"],
+        "ext": [
+          "mp3",
+          "m4a",
+          "aac",
+          "flac",
+          "wav",
+          "ogg",
+          "oga",
+          "opus"
+        ],
         "name": "Lucent.Audio",
         "description": "Audio file",
         "role": "Viewer"
       }
     ],
     "windows": {
-      "webviewInstallMode": { "type": "offlineInstaller" },
+      "webviewInstallMode": {
+        "type": "offlineInstaller"
+      },
       "nsis": {
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",

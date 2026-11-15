@@ -15,6 +15,7 @@ export interface Prefs {
   nowPlayingEffects: boolean
   effectQuality: EffectQuality
   effectType: EffectType
+  avoidLikelyDuplicates: boolean
   compact: boolean
   sidebarCollapsed: boolean
   songSort: SongSort
@@ -33,6 +34,7 @@ export const DEFAULT_PREFS: Prefs = {
   nowPlayingEffects: true,
   effectQuality: 'performance',
   effectType: 'particles',
+  avoidLikelyDuplicates: true,
   compact: false,
   sidebarCollapsed: false,
   songSort: 'added',
@@ -101,7 +103,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
 
   const resetPrefs = useCallback(
     () =>
-      setPrefs((p) => ({ ...DEFAULT_PREFS, lastPath: p.lastPath, closeToTray: p.closeToTray, mediaKeys: p.mediaKeys })),
+      setPrefs((p) => ({ ...DEFAULT_PREFS, lastPath: p.lastPath, closeToTray: p.closeToTray, mediaKeys: p.mediaKeys, avoidLikelyDuplicates: p.avoidLikelyDuplicates })),
     [],
   )
 

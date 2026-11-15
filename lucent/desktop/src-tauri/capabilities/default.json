@@ -23,6 +23,7 @@
     "core:window:allow-unminimize",
     "dialog:allow-open",
     "opener:allow-reveal-item-in-dir",
+    { "identifier": "opener:allow-open-url", "allow": [{ "url": "https://accounts.spotify.com/*" }, { "url": "https://open.spotify.com/*" }, { "url": "https://developer.spotify.com/*" }] },
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
     "global-shortcut:allow-is-registered"

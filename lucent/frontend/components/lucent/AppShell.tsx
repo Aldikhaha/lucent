@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { getCurrentWindow, LogicalSize, type PhysicalSize, type PhysicalPosition } from '@tauri-apps/api/window'
 import { toast } from 'sonner'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -62,8 +62,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (on) {
           previousWindow.current = { size: await win.innerSize(), position: await win.outerPosition(), maximized: await win.isMaximized(), alwaysOnTop: await win.isAlwaysOnTop() }
           if (previousWindow.current.maximized) await win.unmaximize()
-          await win.setMinSize(new LogicalSize(360, 100))
-          await win.setSize(new LogicalSize(460, 116))
+          await win.setMinSize(new LogicalSize(360, 88))
+          await win.setSize(new LogicalSize(460, 88))
           await win.setAlwaysOnTop(true)
         } else {
           const old = previousWindow.current
@@ -85,6 +85,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       toast.error('Could not change mini-player mode')
     } finally { changingWindow.current = false }
   }
+  const resizeIsland = useCallback((view: 'compact' | 'expanded' | 'queue') => {
+    if (isDesktop) void getCurrentWindow().setSize(new LogicalSize(460, view === 'compact' ? 88 : view === 'expanded' ? 198 : 336)).catch(() => toast.error('Could not resize mini-player'))
+  }, [])
   useKeyboardShortcuts()
   useDocumentTitle()
   useRememberLastPath()
@@ -96,7 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <>
       {isDesktop && <DesktopIntegration />}
-      {island ? <IslandPlayer onExpand={() => void changeIsland(false)} /> : <>
+      {island ? <IslandPlayer onExpand={() => void changeIsland(false)} onResize={resizeIsland} /> : <>
       <AmbientBackground />
       {isDesktop && <TitleBar />}
       <div className={cn('relative z-10 flex h-screen flex-col gap-2.5 p-2.5 text-foreground', isDesktop && 'pt-8')}>

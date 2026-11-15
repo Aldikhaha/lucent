@@ -1,5 +1,6 @@
 mod library;
 mod tray;
+mod spotify_auth;
 
 use std::sync::Mutex;
 use tauri::Emitter;
@@ -38,6 +39,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .manage(spotify_auth::SpotifyAuth::default())
         .manage(LaunchFiles(Mutex::new(Some(library::launch_args(&argv)))))
         .invoke_handler(tauri::generate_handler![
             library::scan_paths,
@@ -45,6 +47,9 @@ pub fn run() {
             library::register_library_files,
             take_launch_files,
             tray::set_tray_tooltip,
+            spotify_auth::spotify_auth_start,
+            spotify_auth::spotify_auth_wait,
+            spotify_auth::spotify_auth_cancel,
         ])
         .setup(|app| {
             tray::create(app.handle())?;

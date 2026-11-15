@@ -36,6 +36,7 @@ export interface PlayerDeps {
   loadSource(id: string): Promise<PlaybackSource | null>
   describe(id: string): MediaInfo | null
   artworkUrl(artworkId: string): Promise<string | null>
+  recordingIdentity?(id: string): { key: string; duration: number } | null
   onStarted(id: string): void
   onError(message: string): void
 }
@@ -145,6 +146,37 @@ export class PlayerEngine {
   private setTime(t: number) {
     this.time = t
     this.timeListeners.forEach((l) => l())
+  }
+
+  /** Drop exact IDs and likely copies of the same recording, keeping the chosen track. */
+  private deduplicate(ids: string[], preferred?: string | null): string[] {
+    const unique = uniqueIds(ids)
+    const preferredInfo = preferred ? this.deps.recordingIdentity?.(preferred) : null
+    const groups = new Map<string, number[]>()
+    const result: string[] = []
+    for (const id of unique) {
+      const info = this.deps.recordingIdentity?.(id)
+      if (info && preferredInfo && id !== preferred && info.key === preferredInfo.key && Math.abs(info.duration - preferredInfo.duration) <= 2) continue
+      if (info) {
+        const durations = groups.get(info.key) ?? []
+        if (durations.some((duration) => Math.abs(duration - info.duration) <= 2)) continue
+        durations.push(info.duration); groups.set(info.key, durations)
+      }
+      result.push(id)
+    }
+    return result
+  }
+
+  /** Clean an existing queue without changing the current song or touching the library. */
+  cleanQueue() {
+    const current = this.currentId
+    const queue = this.deduplicate(this.state.queue, current)
+    if (queue.length === this.state.queue.length) return
+    const keep = new Set(queue)
+    this.source = this.source.filter((id) => keep.has(id))
+    const inSource = new Set(this.source)
+    this.source.push(...queue.filter((id) => !inSource.has(id)))
+    this.set({ queue, index: current ? queue.indexOf(current) : -1 })
   }
 
   /* ---------------- audio element ---------------- */
@@ -264,7 +296,7 @@ export class PlayerEngine {
   /** Restores the previous session once the library is known (never autoplays). */
   restore(validIds: Set<string>) {
     const currentId = this.currentId
-    const queue = uniqueIds(this.state.queue.filter((id) => validIds.has(id)))
+    const queue = this.deduplicate(this.state.queue.filter((id) => validIds.has(id)), currentId)
     // Old sessions may contain duplicates or an inconsistent unshuffled source.
     const queuedIds = new Set(queue)
     const source = uniqueIds(this.source.filter((id) => validIds.has(id) && queuedIds.has(id)))
@@ -279,7 +311,7 @@ export class PlayerEngine {
   playQueue(ids: string[], startIndex = 0, contextLabel: string | null = null, forceShuffle?: boolean) {
     this.prepareEqualizer()
     const requested = ids[Math.max(0, Math.min(Number.isFinite(startIndex) ? Math.trunc(startIndex) : 0, ids.length - 1))]
-    ids = uniqueIds(ids)
+    ids = this.deduplicate(ids, requested)
     if (!ids.length) return
     const shuffle = forceShuffle ?? this.state.shuffle
     this.source = ids.slice()
@@ -417,38 +449,33 @@ export class PlayerEngine {
     void this.load(true)
   }
 
-  /** Move selected songs to next, rather than creating duplicate queue entries. */
+  /** Move selected songs next, replacing equivalent queued copies when applicable. */
   playNext(ids: string[]): number {
-    ids = uniqueIds(ids).filter((id) => id !== this.currentId)
+    const current = this.currentId
+    ids = this.deduplicate(ids).filter((id) => !current || this.deduplicate([current, id], current).length > 1)
     if (!ids.length) return 0
-    if (this.state.index < 0) {
-      this.playQueue(ids, 0, 'Queue')
-      return ids.length
-    }
-    const current = this.currentId!
+    if (this.state.index < 0) { this.playQueue(ids, 0, 'Queue'); return ids.length }
     const chosen = new Set(ids)
-    const queue = this.state.queue.filter((id) => !chosen.has(id))
-    const index = queue.indexOf(current)
+    const keepOld = (id: string) => !chosen.has(id) && ids.every((selected) => this.deduplicate([selected, id], selected).length > 1)
+    const queue = this.state.queue.filter(keepOld)
+    const index = queue.indexOf(current!)
     queue.splice(index + 1, 0, ...ids)
-    this.source = this.source.filter((id) => !chosen.has(id))
-    const srcIndex = this.source.indexOf(current)
+    this.source = this.source.filter(keepOld)
+    const srcIndex = this.source.indexOf(current!)
     this.source.splice(srcIndex < 0 ? this.source.length : srcIndex + 1, 0, ...ids)
     this.set({ queue, index })
     return ids.length
   }
 
-  /** Ignore tracks already present; use Repeat to intentionally replay a song. */
+  /** Skip exact or likely duplicate songs already in the queue. */
   addToQueue(ids: string[]): number {
-    const existing = new Set(this.state.queue)
-    ids = uniqueIds(ids).filter((id) => !existing.has(id))
-    if (!ids.length) return 0
-    if (this.state.index < 0) {
-      this.playQueue(ids, 0, 'Queue')
-      return ids.length
-    }
-    this.source.push(...ids)
-    this.set({ queue: [...this.state.queue, ...ids] })
-    return ids.length
+    const combined = this.deduplicate([...this.state.queue, ...ids], this.currentId)
+    const added = combined.filter((id) => !this.state.queue.includes(id))
+    if (!added.length) return 0
+    if (this.state.index < 0) { this.playQueue(added, 0, 'Queue'); return added.length }
+    this.source.push(...added)
+    this.set({ queue: [...this.state.queue, ...added] })
+    return added.length
   }
 
   removeFromQueue(index: number) {

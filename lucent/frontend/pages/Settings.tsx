@@ -14,7 +14,7 @@ import { Slider } from '../lib/shadcn/slider'
 import { Switch } from '../lib/shadcn/switch'
 import { ToggleGroup, ToggleGroupItem } from '../lib/shadcn/toggle-group'
 
-export const APP_VERSION = '3.0.1'
+export const APP_VERSION = '4.0.0'
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -286,6 +286,12 @@ export default function Settings() {
           </Row>
         </Section>
       )}
+
+      <Section title="Playback queue" description="These settings do not delete or change your music files.">
+        <Row label="Skip likely duplicate songs" hint="Same title and artist within two seconds of duration. Turn off to keep similarly tagged recordings.">
+          <Switch aria-label="Skip likely duplicate songs" checked={prefs.avoidLikelyDuplicates} onCheckedChange={(v) => setPref('avoidLikelyDuplicates', v)} className="data-[state=checked]:bg-[color:var(--lc-accent)]" />
+        </Row>
+      </Section>
 
       <Section title="Equalizer" description="Five-band audio shaping. Boosts automatically add headroom to reduce clipping.">
         <Row label="Equalizer" hint="Saved on this device">

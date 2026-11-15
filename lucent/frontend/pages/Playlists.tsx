@@ -54,6 +54,7 @@ export function PlaylistsPage() {
         <h1 className="text-[32px] font-semibold tracking-tight text-foreground">Playlists</h1>
         <p className="mt-1 text-[13px] text-muted-foreground">Your music, your order. Saved on this device.</p>
       </header>
+      <Link to="/spotify" className="lc-focus mb-5 inline-flex rounded-xl bg-[hsl(var(--lc-hover)/0.08)] px-4 py-2 text-sm hover:bg-[hsl(var(--lc-hover)/0.14)]">Listen with Spotify · Experimental</Link>
       {selected && (
         <div
           role="status"

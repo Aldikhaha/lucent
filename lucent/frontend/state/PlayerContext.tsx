@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { PlayerEngine, type PlayerState } from '../core/player'
+import { recordingIdentity } from '../core/recordingIdentity'
+import { usePrefs } from './PrefsContext'
 import { getAudio } from '../core/db'
 import { getArtworkUrl } from '../core/artwork'
 import { isDesktop } from '../core/platform'
@@ -13,6 +15,9 @@ const PlayerContext = createContext<PlayerEngine | null>(null)
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const library = useLibrary()
+  const { prefs } = usePrefs()
+  const avoidDuplicates = useRef(prefs.avoidLikelyDuplicates)
+  avoidDuplicates.current = prefs.avoidLikelyDuplicates
   const libRef = useRef(library)
   libRef.current = library
 
@@ -32,6 +37,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           return t ? { title: t.title, artist: t.artist, album: t.album, artworkId: t.artworkId } : null
         },
         artworkUrl: (artworkId) => getArtworkUrl(artworkId),
+        recordingIdentity: (id) => avoidDuplicates.current ? recordingIdentity(libRef.current.byId.get(id)) : null,
         onStarted: (id) => libRef.current.markPlayed(id),
         onError: (message) => toast.error('Playback error', { description: message }),
       }),
@@ -44,6 +50,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     restored.current = true
     engine.restore(new Set(library.tracks.map((t) => t.id)))
   }, [library.ready, library.tracks, engine])
+
+  useEffect(() => {
+    if (library.ready && prefs.avoidLikelyDuplicates && restored.current) engine.cleanQueue()
+  }, [library.ready, prefs.avoidLikelyDuplicates, engine])
 
   return <PlayerContext.Provider value={engine}>{children}</PlayerContext.Provider>
 }

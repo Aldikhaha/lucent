@@ -214,3 +214,49 @@ test('equalizer validates bands and persists settings', () => {
   const saved = JSON.parse(values.get('lucent.equalizer.v1')!)
   assert.deepEqual(saved.bands, [12, -12, 1, 2, 3])
 })
+
+function identityEngine() {
+  values.clear()
+  const records: Record<string, { key: string; duration: number }> = {
+    a: { key: 'song|artist', duration: 120 }, copy: { key: 'song|artist', duration: 121 },
+    version: { key: 'song live|artist', duration: 121 }, other: { key: 'other|artist', duration: 100 },
+  }
+  let enabled = true
+  const p = new PlayerEngine({
+    loadSource: async (id) => ({ url: id }), describe: () => null, artworkUrl: async () => null,
+    recordingIdentity: (id) => enabled ? records[id] ?? null : null,
+    onStarted() {}, onError() {},
+  })
+  return { p, setEnabled: (value: boolean) => { enabled = value } }
+}
+
+test('different library IDs for a likely copy collapse while keeping the explicitly selected file', () => {
+  const { p } = identityEngine()
+  p.playQueue(['a', 'other', 'copy', 'version'], 2)
+  assert.deepEqual(p.getState().queue, ['other', 'copy', 'version'])
+  assert.equal(p.currentId, 'copy')
+  assert.equal(p.addToQueue(['a']), 0)
+})
+
+test('play-next replaces an equivalent queued copy without duplicates', () => {
+  const { p } = identityEngine()
+  p.playQueue(['other', 'a', 'version'])
+  assert.equal(p.playNext(['copy']), 1)
+  assert.deepEqual(p.getState().queue, ['other', 'copy', 'version'])
+  p.toggleShuffle(); p.toggleShuffle()
+  assert.deepEqual(p.getState().queue, ['other', 'copy', 'version'])
+})
+
+test('existing queue cleanup keeps current copy and can be disabled for distinct editions', () => {
+  const { p, setEnabled } = identityEngine()
+  setEnabled(false)
+  p.playQueue(['a', 'other', 'copy', 'version'], 2)
+  assert.equal(p.getState().queue.length, 4)
+  setEnabled(true)
+  p.cleanQueue()
+  assert.deepEqual(p.getState().queue, ['other', 'copy', 'version'])
+  assert.equal(p.currentId, 'copy')
+  setEnabled(false)
+  p.playQueue(['a', 'copy'], 0)
+  assert.deepEqual(p.getState().queue, ['a', 'copy'])
+})
