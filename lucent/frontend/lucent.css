@@ -401,3 +401,7 @@ body {
 .lc-island-seek .lc-bar { background:rgba(226,235,255,.23) } .lc-island-seek .lc-bar-fill { background:#c3dbff } .lc-island-seek span { color:#b1bdd0 }
 .lc-island-queue-row { display:flex; width:100%; align-items:center; gap:10px; border-radius:9px; padding:3px 5px; color:#edf3ff; } .lc-island-queue-row:hover { background:rgba(255,255,255,.08); }
 @media (prefers-reduced-motion: reduce) { .lc-island-bars i { animation:none !important; } .lc-island-button { transition:none; } }
+
+.lc-island-track { animation: lc-island-track-in .28s cubic-bezier(.2,.75,.2,1) both; }
+@keyframes lc-island-track-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .lc-island-track { animation: none; } }

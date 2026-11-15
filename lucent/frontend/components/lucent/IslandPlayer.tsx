@@ -23,8 +23,10 @@ export function IslandPlayer({ onExpand, onResize }: { onExpand: () => void; onR
   return <main className="lc-island-window h-screen p-2" onPointerDown={drag} onMouseEnter={() => setInside(true)} onMouseLeave={() => setInside(false)}>
     <div className="lc-island h-full overflow-hidden" data-island-view={view}>
       <div className="flex h-[72px] items-center gap-3 px-3">
-        <Artwork artworkId={track?.artworkId ?? null} eager className="h-12 w-12 rounded-[14px]" />
-        <div className="min-w-0 flex-1 select-none" title="Drag to move"><div className="truncate text-sm font-semibold text-white">{track?.title ?? 'Nothing playing'}</div><div className="truncate text-xs text-slate-300">{track?.artist ?? 'Choose a song to begin'}</div></div>
+        <div key={track?.id ?? 'empty'} className="lc-island-track flex min-w-0 flex-1 items-center gap-3">
+          <Artwork artworkId={track?.artworkId ?? null} eager className="h-12 w-12 rounded-[14px]" />
+          <div className="min-w-0 flex-1 select-none" title="Drag to move"><div className="truncate text-sm font-semibold text-white">{track?.title ?? 'Nothing playing'}</div><div className="truncate text-xs text-slate-300">{track?.artist ?? 'Choose a song to begin'}</div></div>
+        </div>
         <div className="lc-island-bars" aria-label={playing ? 'Playing' : 'Paused'} data-playing={playing}><i/><i/><i/><i/><i/><i/><i/></div>
         <button type="button" aria-label={playing ? 'Pause' : 'Play'} className={control} disabled={!state.queue.length} onClick={() => player.toggle()}>{playing ? <Pause size={17} fill="currentColor" /> : <Play size={17} fill="currentColor" />}</button>
         <button type="button" aria-label="Next" className={control} disabled={!state.queue.length} onClick={() => player.next()}><SkipForward size={17} fill="currentColor" /></button>
