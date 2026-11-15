@@ -62,12 +62,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (on) {
           previousWindow.current = { size: await win.innerSize(), position: await win.outerPosition(), maximized: await win.isMaximized(), alwaysOnTop: await win.isAlwaysOnTop() }
           if (previousWindow.current.maximized) await win.unmaximize()
-          await win.setMinSize(new LogicalSize(360, 88))
+          await win.setMinSize(new LogicalSize(460, 88))
           await win.setSize(new LogicalSize(460, 88))
+          await win.setResizable(false)
           await win.setAlwaysOnTop(true)
         } else {
           const old = previousWindow.current
           await win.setAlwaysOnTop(old?.alwaysOnTop ?? false)
+          await win.setResizable(true)
           await win.setMinSize(new LogicalSize(880, 600))
           if (old) { await win.setSize(old.size); await win.setPosition(old.position); if (old.maximized) await win.maximize() }
         }
@@ -78,6 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         const win = getCurrentWindow()
         const old = previousWindow.current
         await win.setAlwaysOnTop(old?.alwaysOnTop ?? false).catch(() => undefined)
+        await win.setResizable(true).catch(() => undefined)
         await win.setMinSize(new LogicalSize(880, 600)).catch(() => undefined)
         if (old) { await win.setSize(old.size).catch(() => undefined); await win.setPosition(old.position).catch(() => undefined); if (old.maximized) await win.maximize().catch(() => undefined) }
       }
